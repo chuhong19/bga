@@ -36,3 +36,15 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('copyJar', Copy) {
+	dependsOn bootJar
+	from layout.buildDirectory.file("libs/${rootProject.name}-${version}.jar")
+	into layout.buildDirectory.dir("docker")
+}
+
+tasks.register('buildDockerImage', Exec) {
+	dependsOn copyJar
+	commandLine 'docker', 'build', '-t', 'bga-server', '.'
+}
+

@@ -3,21 +3,29 @@ package com.example.bga.auth.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
+import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    private final String SECRET_KEY = "we3fKW8QfYY04pfR1VyFq5LbgFSTnUgpRjILR9bGDzw";
+    private static final String SECRET_KEY = "we3fKW8QfYY04pfR1VyFq5LbgFSTnUgpRjILR9bGDzw";
+    private final Key key;
+
+    public JwtUtil() {
+        this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET_KEY));
+    }
 
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -34,8 +42,9 @@ public class JwtUtil {
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+        final Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
         return claimsResolver.apply(claims);
